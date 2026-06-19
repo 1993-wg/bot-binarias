@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Binary Signal Bot - Panel de Trading</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Estilos Personalizados -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- Lightweight Charts para Índices Sintéticos -->
+    <script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+    <!-- Fondo Animado con Partículas CSS -->
+    <div class="bg-stars"></div>
+    <div class="bg-glow"></div>
+
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="logo-area">
+                <i class="fa-solid fa-bolt logo-icon"></i>
+                <div class="logo-text">
+                    <h1>QUANTUM<span>BINARY</span></h1>
+                    <p>SMC + ML ENGINE — DERIV BOT</p>
+                </div>
+            </div>
+            
+            <div class="header-controls">
+                <div class="status-indicator online" id="connection-status">
+                    <span class="status-dot"></span>
+                    <span class="status-label">CONECTADO</span>
+                </div>
+                <div class="server-time">
+                    <i class="fa-regular fa-clock"></i>
+                    <span id="live-clock">00:00:00</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN LAYOUT -->
+        <main class="app-main">
+            <!-- COLUMNA IZQUIERDA: CONTROLES Y SEÑAL PRINCIPAL -->
+            <section class="left-panel">
+                
+                <!-- ASSET & TIMEFRAME SELECTOR -->
+                <div class="panel-card selectors-card">
+                    <h2 class="card-title"><i class="fa-solid fa-sliders"></i> Configuración de Señal</h2>
+                    
+                    <div class="form-group">
+                        <label for="asset-select"><i class="fa-solid fa-chart-line"></i> Activo Financiero</label>
+                        <div class="custom-select-wrapper">
+                            <select id="asset-select" class="custom-select">
+                                <optgroup label="Forex (Divisas)">
+                                    <option value="EURUSD" data-screener="forex" data-exchange="FX_IDC" selected>EUR/USD (Euro / Dólar)</option>
+                                    <option value="GBPUSD" data-screener="forex" data-exchange="FX_IDC">GBP/USD (Libra / Dólar)</option>
+                                    <option value="USDJPY" data-screener="forex" data-exchange="FX_IDC">USD/JPY (Dólar / Yen)</option>
+                                    <option value="AUDUSD" data-screener="forex" data-exchange="FX_IDC">AUD/USD (Dólar Aus. / Dólar)</option>
+                                    <option value="USDCAD" data-screener="forex" data-exchange="FX_IDC">USD/CAD (Dólar / Dólar Can.)</option>
+                                    <option value="EURGBP" data-screener="forex" data-exchange="FX_IDC">EUR/GBP (Euro / Libra)</option>
+                                    <option value="GBPJPY" data-screener="forex" data-exchange="FX_IDC">GBP/JPY (Libra / Yen)</option>
+                                </optgroup>
+                                <optgroup label="Criptomonedas">
+                                    <option value="BTCUSD" data-screener="crypto" data-exchange="BINANCE">BTC/USD (Bitcoin / Tether)</option>
+                                    <option value="ETHUSD" data-screener="crypto" data-exchange="BINANCE">ETH/USD (Ethereum / Tether)</option>
+                                    <option value="SOLUSD" data-screener="crypto" data-exchange="BINANCE">SOL/USD (Solana / Tether)</option>
+                                </optgroup>
+                                <optgroup label="Índices Sintéticos (Deriv)">
+                                    <option value="R_10" data-screener="synthetic" data-exchange="DERIV">Volatility 10 Index</option>
+                                    <option value="R_25" data-screener="synthetic" data-exchange="DERIV">Volatility 25 Index</option>
+                                    <option value="R_50" data-screener="synthetic" data-exchange="DERIV">Volatility 50 Index</option>
+                                    <option value="R_75" data-screener="synthetic" data-exchange="DERIV">Volatility 75 Index</option>
+                                    <option value="R_100" data-screener="synthetic" data-exchange="DERIV">Volatility 100 Index</option>
+                                    <option value="1HZ10V" data-screener="synthetic" data-exchange="DERIV">Volatility 10 (1s) Index</option>
+                                    <option value="1HZ100V" data-screener="synthetic" data-exchange="DERIV">Volatility 100 (1s) Index</option>
+                                </optgroup>
+                                <optgroup label="Índices y Commodities">
+                                    <option value="SPX500" data-screener="forex" data-exchange="FOREXCOM">S&P 500 (Índice EE.UU)</option>
+                                    <option value="USOIL" data-screener="forex" data-exchange="FOREXCOM">WTI Crude Oil (Petróleo)</option>
+                                    <option value="XAUUSD" data-screener="forex" data-exchange="FX_IDC">GOLD (Oro / Dólar)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fa-regular fa-hourglass-half"></i> Temporalidad (Expiración Sugerida)</label>
+                        <div class="timeframe-buttons">
+                            <button class="tf-btn active" data-interval="1m">1 Min</button>
+                            <button class="tf-btn" data-interval="5m">5 Min</button>
+                            <button class="tf-btn" data-interval="15m">15 Min</button>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <div class="toggle-control">
+                            <label class="switch">
+                                <input type="checkbox" id="sound-toggle" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span>Alertas Sonoras</span>
+                        </div>
+                        <div class="toggle-control">
+                            <label class="switch">
+                                <input type="checkbox" id="auto-refresh" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span>Auto-Refrescar (10s)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BROKER CONEXION CARD (DERIV OPTIONS API) -->
+                <div class="panel-card deriv-card">
+                    <h2 class="card-title"><i class="fa-solid fa-circle-nodes"></i> Broker: Deriv Options API</h2>
+                    
+                    <div class="form-group">
+                        <label for="deriv-env"><i class="fa-solid fa-server"></i> Entorno de Cuenta</label>
+                        <div class="custom-select-wrapper">
+                            <select id="deriv-env" class="custom-select">
+                                <option value="demo" selected>Cuenta Demo (api.derivws.com)</option>
+                                <option value="real">Cuenta Real (api.derivws.com)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="deriv-otp"><i class="fa-solid fa-key"></i> Token OTP (One-Time Password)</label>
+                        <div style="position: relative;">
+                            <input type="password" id="deriv-otp" class="custom-input" placeholder="Introduce tu OTP de conexión">
+                        </div>
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label for="deriv-stake"><i class="fa-solid fa-dollar-sign"></i> Stake (Monto)</label>
+                            <input type="number" id="deriv-stake" class="custom-input" value="1.00" min="0.35" step="0.5">
+                        </div>
+                        <div class="form-group">
+                            <label for="deriv-duration"><i class="fa-solid fa-clock"></i> Expiración (m)</label>
+                            <input type="number" id="deriv-duration" class="custom-input" value="1" min="1" max="15">
+                        </div>
+                    </div>
+
+                    <div class="control-row" style="margin-top: 10px; padding-top: 10px;">
+                        <div class="toggle-control">
+                            <label class="switch">
+                                <input type="checkbox" id="deriv-autotrade">
+                                <span class="slider round"></span>
+                            </label>
+                            <span style="font-weight: 700; color: var(--text-main);">Auto-Trading</span>
+                        </div>
+                        <button class="btn-connect-deriv" id="btn-connect-deriv">Conectar</button>
+                    </div>
+
+                    <!-- ESTADO DE CONEXION DERIV -->
+                    <div class="deriv-status-bar offline" id="deriv-status-bar">
+                        ESTADO: DESCONECTADO
+                    </div>
+
+                    <!-- BITÁCORA DE TRANSACCIONES -->
+                    <div class="deriv-log-wrapper" style="margin-top: 15px;">
+                        <label style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; display: block; margin-bottom: 5px;"><i class="fa-solid fa-terminal"></i> Consola Deriv API</label>
+                        <div class="deriv-console-log" id="deriv-console-log">[SISTEMA] Listo para iniciar conexión con Deriv...</div>
+                    </div>
+                </div>
+
+                <!-- SIGNAL DISPLAY CARD -->
+                <div class="panel-card signal-card neon-neutral" id="main-signal-card">
+                    <div class="card-header-flex">
+                        <h2 class="card-title"><i class="fa-solid fa-wifi"></i> Señal en Tiempo Real</h2>
+                        <button class="btn-refresh" id="refresh-btn" title="Refrescar Señal">
+                            <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i>
+                        </button>
+                    </div>
+
+                    <!-- GAUGE DE SEÑAL -->
+                    <div class="gauge-container">
+                        <svg class="gauge-svg" viewBox="0 0 200 120">
+                            <path class="gauge-bg-arc" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#252b36" stroke-width="12" stroke-linecap="round"></path>
+                            <path class="gauge-color-sell" d="M 20 100 A 80 80 0 0 1 70 45" fill="none" stroke="rgba(255, 65, 54, 0.4)" stroke-width="12"></path>
+                            <path class="gauge-color-neutral" d="M 70 45 A 80 80 0 0 1 130 45" fill="none" stroke="rgba(255, 133, 27, 0.4)" stroke-width="12"></path>
+                            <path class="gauge-color-buy" d="M 130 45 A 80 80 0 0 1 180 100" fill="none" stroke="rgba(46, 204, 64, 0.4)" stroke-width="12"></path>
+                            <g id="gauge-needle-group" transform="translate(100, 100) rotate(0)">
+                                <polygon points="-5,0 0,-75 5,0" fill="#00ffcc" class="needle-poly"></polygon>
+                                <circle cx="0" cy="0" r="10" fill="#00ffcc" stroke="#101520" stroke-width="3"></circle>
+                            </g>
+                        </svg>
+                        <div class="gauge-value" id="gauge-val-text">--</div>
+                    </div>
+
+                    <!-- DIRECCIÓN DE OPERACIÓN -->
+                    <div class="signal-direction-box">
+                        <div class="direction-badge" id="signal-direction">NEUTRAL</div>
+                        <div class="direction-action" id="signal-action">ESPERAR SEÑAL</div>
+                    </div>
+
+                    <!-- ESTADÍSTICAS DE RATIO COMPRA/VENTA -->
+                    <div class="signal-metrics">
+                        <div class="metric-item">
+                            <span class="m-label">COMPRAS</span>
+                            <span class="m-val val-buy" id="summary-buy">0</span>
+                        </div>
+                        <div class="metric-item border-sides">
+                            <span class="m-label">NEUTRAL</span>
+                            <span class="m-val val-neutral" id="summary-neutral">0</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="m-label">VENTAS</span>
+                            <span class="m-val val-sell" id="summary-sell">0</span>
+                        </div>
+                    </div>
+
+                    <!-- PORCENTAJE DE CONFIANZA -->
+                    <div class="confidence-area">
+                        <div class="confidence-text">Fuerza de la Señal: <span id="confidence-pct">0%</span></div>
+                        <div class="confidence-bar-bg">
+                            <div class="confidence-bar-fill" id="confidence-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="last-updated-text">
+                        Última actualización: <span id="last-update-time">--:--:--</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- COLUMNA DERECHA: GRÁFICO Y DETALLE TÉCNICO -->
+            <section class="right-panel">
+
+                <!-- GRÁFICO DE VELAS + SMC OVERLAY -->
+                <div class="panel-card chart-card">
+                    <div class="chart-card-header">
+                        <h2 class="card-title"><i class="fa-solid fa-chart-area"></i> Gráfico de Velas en Tiempo Real</h2>
+                        <div class="chart-badge-row" id="chart-badges">
+                            <!-- Los badges de zonas activas se insertan aquí dinámicamente -->
+                        </div>
+                    </div>
+                    <!-- El contenedor del gráfico tiene altura fija explícita para que Lightweight Charts funcione -->
+                    <div id="deriv_chart_container" style="width:100%; height:400px; border-radius:12px; overflow:hidden; background:#05070c;"></div>
+                    <!-- Widget TradingView (Forex / Crypto) -->
+                    <div id="tradingview_chart" style="width:100%; height:400px; border-radius:12px; overflow:hidden; display:none;"></div>
+                </div>
+
+                <!-- PANEL SEÑAL DE ENTRADA — TIMING EXACTO -->
+                <div class="panel-card entry-signal-card" id="entry-signal-panel">
+                    <div class="entry-signal-header">
+                        <h2 class="card-title" style="margin-bottom:0;border-bottom:none;padding-bottom:0;">
+                            <i class="fa-solid fa-crosshairs"></i> Señal de Entrada — Ejecución Exacta
+                        </h2>
+                        <div class="entry-signal-badge" id="entry-badge">EN ESPERA</div>
+                    </div>
+
+                    <!-- PRECIO DE ENTRADA Y DIRECCIÓN -->
+                    <div class="entry-price-row">
+                        <div class="entry-price-box">
+                            <span class="ep-label"><i class="fa-solid fa-circle-dot"></i> Precio de Entrada</span>
+                            <span class="ep-value" id="entry-price-val">—</span>
+                        </div>
+                        <div class="entry-direction-box" id="entry-direction-box">
+                            <div class="entry-dir-icon" id="entry-dir-icon"><i class="fa-solid fa-minus"></i></div>
+                            <div class="entry-dir-label" id="entry-dir-label">NEUTRAL</div>
+                        </div>
+                        <div class="entry-atr-box">
+                            <span class="ep-label"><i class="fa-solid fa-wave-square"></i> ATR (14)</span>
+                            <span class="ep-value" id="entry-atr-val">—</span>
+                        </div>
+                    </div>
+
+                    <!-- COUNTDOWN / TIMER DE ENTRADA -->
+                    <div class="entry-countdown-row">
+                        <div class="entry-countdown-label">⏱ Tiempo hasta cierre de vela actual:</div>
+                        <div class="entry-countdown-timer" id="entry-countdown">--:--</div>
+                        <div class="entry-timing-hint" id="entry-timing-hint">Espera la apertura de la siguiente vela para ejecutar</div>
+                    </div>
+
+                    <!-- SELECTOR DE TEMPORALIDAD DE EXPIRACIÓN -->
+                    <div class="entry-tf-row">
+                        <span class="ep-label" style="margin-bottom:8px; display:block;"><i class="fa-solid fa-hourglass-start"></i> Expiración objetivo:</span>
+                        <div class="entry-tf-buttons" id="entry-tf-buttons">
+                            <button class="etf-btn active" data-etf="1">1m</button>
+                            <button class="etf-btn" data-etf="2">2m</button>
+                            <button class="etf-btn" data-etf="3">3m</button>
+                            <button class="etf-btn" data-etf="4">4m</button>
+                            <button class="etf-btn" data-etf="5">5m</button>
+                            <button class="etf-btn" data-etf="6">6m</button>
+                            <button class="etf-btn" data-etf="7">7m</button>
+                            <button class="etf-btn" data-etf="8">8m</button>
+                            <button class="etf-btn" data-etf="9">9m</button>
+                            <button class="etf-btn" data-etf="10">10m</button>
+                            <button class="etf-btn" data-etf="15">15m</button>
+                        </div>
+                    </div>
+
+                    <!-- TARGETS Y STOP LOSS -->
+                    <div class="entry-targets-row" id="entry-targets-row">
+                        <div class="entry-target-item call-target">
+                            <div class="et-icon"><i class="fa-solid fa-bullseye"></i></div>
+                            <div class="et-data">
+                                <span class="et-label">TARGET (TP)</span>
+                                <span class="et-value" id="entry-tp-val">—</span>
+                                <span class="et-pct" id="entry-tp-pct">+0.000%</span>
+                            </div>
+                        </div>
+                        <div class="entry-divider">VS</div>
+                        <div class="entry-target-item sl-target">
+                            <div class="et-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                            <div class="et-data">
+                                <span class="et-label">STOP LOSS (SL)</span>
+                                <span class="et-value" id="entry-sl-val">—</span>
+                                <span class="et-pct" id="entry-sl-pct">-0.000%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MOVIMIENTO ESPERADO -->
+                    <div class="entry-movement-row">
+                        <div class="movement-label">📈 Movimiento esperado en <span id="movement-tf">1</span> min:</div>
+                        <div class="movement-bar-bg">
+                            <div class="movement-bar-fill" id="movement-bar" style="width:50%; background: var(--neon-cyan);"></div>
+                        </div>
+                        <div class="movement-value" id="movement-pips">± 0.00000</div>
+                    </div>
+                </div>
+
+                <!-- PANEL SMC — ESTRUCTURA DE MERCADO -->
+                <div class="panel-card smc-panel">
+                    <h2 class="card-title"><i class="fa-solid fa-layer-group"></i> Estructura de Mercado (SMC)</h2>
+                    <div class="smc-grid">
+
+                        <!-- Order Blocks -->
+                        <div class="smc-item" id="smc-ob">
+                            <div class="smc-icon ob-icon"><i class="fa-solid fa-cubes"></i></div>
+                            <div class="smc-data">
+                                <span class="smc-label">Order Block</span>
+                                <span class="smc-value" id="smc-ob-val">—</span>
+                            </div>
+                            <div class="smc-status" id="smc-ob-dot"></div>
+                        </div>
+
+                        <!-- Fair Value Gap -->
+                        <div class="smc-item" id="smc-fvg">
+                            <div class="smc-icon fvg-icon"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
+                            <div class="smc-data">
+                                <span class="smc-label">Fair Value Gap</span>
+                                <span class="smc-value" id="smc-fvg-val">—</span>
+                            </div>
+                            <div class="smc-status" id="smc-fvg-dot"></div>
+                        </div>
+
+                        <!-- Soporte -->
+                        <div class="smc-item" id="smc-support">
+                            <div class="smc-icon sup-icon"><i class="fa-solid fa-arrow-up-from-bracket"></i></div>
+                            <div class="smc-data">
+                                <span class="smc-label">Soporte</span>
+                                <span class="smc-value" id="smc-sup-val">—</span>
+                            </div>
+                            <div class="smc-status" id="smc-sup-dot"></div>
+                        </div>
+
+                        <!-- Resistencia -->
+                        <div class="smc-item" id="smc-resistance">
+                            <div class="smc-icon res-icon"><i class="fa-solid fa-arrow-down-to-bracket"></i></div>
+                            <div class="smc-data">
+                                <span class="smc-label">Resistencia</span>
+                                <span class="smc-value" id="smc-res-val">—</span>
+                            </div>
+                            <div class="smc-status" id="smc-res-dot"></div>
+                        </div>
+
+                        <!-- Liquidez -->
+                        <div class="smc-item" id="smc-liquidity">
+                            <div class="smc-icon liq-icon"><i class="fa-solid fa-droplet"></i></div>
+                            <div class="smc-data">
+                                <span class="smc-label">Zona de Liquidez</span>
+                                <span class="smc-value" id="smc-liq-val">—</span>
+                            </div>
+                            <div class="smc-status" id="smc-liq-dot"></div>
+                        </div>
+
+                        <!-- Rompimiento -->
+                        <div class="smc-item" id="smc-breakout">
+                            <div class="smc-icon brk-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
+                            <div class="smc-data">
+                                <span class="smc-label">Rompimiento</span>
+                                <span class="smc-value" id="smc-brk-val">—</span>
+                            </div>
+                            <div class="smc-status" id="smc-brk-dot"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PANEL ML — PREDICCIÓN DE MACHINE LEARNING -->
+                <div class="panel-card ml-panel">
+                    <h2 class="card-title"><i class="fa-solid fa-brain"></i> Predicción ML (Random Forest)</h2>
+
+                    <!-- Barra de Aprendizaje -->
+                    <div class="ml-learning-row">
+                        <div class="ml-learn-label">
+                            <i class="fa-solid fa-database"></i>
+                            Muestras Recopiladas: <span id="ml-samples">0</span> / <span id="ml-min">60</span>
+                        </div>
+                        <div class="ml-learn-bar-bg">
+                            <div class="ml-learn-bar-fill" id="ml-learn-bar" style="width:0%"></div>
+                        </div>
+                        <div class="ml-trained-badge" id="ml-trained-badge">
+                            <i class="fa-solid fa-circle-xmark"></i> Sin entrenar
+                        </div>
+                    </div>
+
+                    <!-- Resultado de Predicción ML -->
+                    <div class="ml-prediction-row">
+                        <div class="ml-call-box">
+                            <div class="ml-pred-label">CALL (SUBE)</div>
+                            <div class="ml-pred-pct" id="ml-call-pct">50%</div>
+                            <div class="ml-pred-bar-bg">
+                                <div class="ml-pred-bar-fill call-fill" id="ml-call-bar" style="height:50%"></div>
+                            </div>
+                        </div>
+                        <div class="ml-vs">VS</div>
+                        <div class="ml-put-box">
+                            <div class="ml-pred-label">PUT (BAJA)</div>
+                            <div class="ml-pred-pct" id="ml-put-pct">50%</div>
+                            <div class="ml-pred-bar-bg">
+                                <div class="ml-pred-bar-fill put-fill" id="ml-put-bar" style="height:50%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ml-hint" id="ml-hint">
+                        <i class="fa-solid fa-circle-info"></i>
+                        Recopilando datos del mercado... El modelo aprenderá automáticamente con cada actualización.
+                    </div>
+                </div>
+
+                <!-- ANALYTICS TABS & DATA TABLES -->
+                <div class="panel-card details-card">
+                    <div class="details-tabs">
+                        <button class="tab-btn active" data-tab="tab-oscillators"><i class="fa-solid fa-wave-square"></i> Osciladores</button>
+                        <button class="tab-btn" data-tab="tab-moving-avg"><i class="fa-solid fa-chart-line"></i> Medias Móviles</button>
+                        <button class="tab-btn" data-tab="tab-history"><i class="fa-solid fa-list-check"></i> Historial</button>
+                    </div>
+
+                    <!-- PANE: OSCILADORES -->
+                    <div class="tab-pane active" id="tab-oscillators">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Indicador</th>
+                                        <th>Valor</th>
+                                        <th>Recomendación</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="oscillators-tbody">
+                                    <tr><td colspan="3" class="text-center">Cargando osciladores...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- PANE: MEDIAS MOVILES -->
+                    <div class="tab-pane" id="tab-moving-avg">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Media Móvil</th>
+                                        <th>Precio Actual</th>
+                                        <th>Valor Indicador</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ma-tbody">
+                                    <tr><td colspan="4" class="text-center">Cargando medias móviles...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- PANE: HISTORIAL -->
+                    <div class="tab-pane" id="tab-history">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Hora</th>
+                                        <th>Activo</th>
+                                        <th>TF</th>
+                                        <th>Señal</th>
+                                        <th>ML %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-tbody">
+                                    <tr><td colspan="5" class="text-center">No hay señales registradas en esta sesión.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="app-footer">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <h3>Quantum Binary Bot — SMC + ML Engine</h3>
+                    <p>
+                        El bot recopila datos de mercado cada 10 segundos. Después de <strong>60 muestras</strong> (~10 min), el modelo <strong>Random Forest</strong> comienza a predecir la dirección de la siguiente vela con aprendizaje continuo.
+                        Las zonas SMC (Order Blocks, FVG, Soporte, Resistencia, Liquidez) se detectan automáticamente sobre las últimas 150 velas.
+                    </p>
+                </div>
+                <div class="footer-actions">
+                    <a href="https://app.deriv.com" target="_blank" class="footer-btn"><i class="fa-solid fa-up-right-from-square"></i> Abrir Deriv</a>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>&copy; 2026 Quantum Binary Bot. SMC + Machine Learning para trading algorítmico 100% gratuito.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Script de TradingView Widget -->
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <!-- Script de la Aplicación -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
