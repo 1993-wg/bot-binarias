@@ -3,7 +3,7 @@ import sys
 import json
 import asyncio
 import websockets
-import pandas as pd
+import polars as pd
 import numpy as np
 from collections import deque
 from flask import Flask, jsonify, request, render_template
