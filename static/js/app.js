@@ -1261,6 +1261,14 @@ function drawChartSignalOverlay(overlay, candles) {
     if (!isCall && !isPut) {
         // Remove old markers and lines if neutral
         try { state.candleSeries.setMarkers([]); } catch(e) {}
+        if (state.tpLine) {
+            try { state.candleSeries.removePriceLine(state.tpLine); } catch(e) {}
+            state.tpLine = null;
+        }
+        if (state.slLine) {
+            try { state.candleSeries.removePriceLine(state.slLine); } catch(e) {}
+            state.slLine = null;
+        }
         return;
     }
 
