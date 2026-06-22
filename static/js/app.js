@@ -632,6 +632,12 @@ function updateDashboard(data, isAssetChange) {
         setVal('ml-call-pct', `${ml.call_pct || 0}%`);
         setVal('ml-put-pct', `${ml.put_pct || 0}%`);
 
+        if (ml.trained && ml.expected_price_neural) {
+            setVal('ml-neural-price', ml.expected_price_neural.toFixed(5));
+        } else {
+            setVal('ml-neural-price', '—');
+        }
+
         const callBar = document.getElementById('ml-call-bar');
         const putBar = document.getElementById('ml-put-bar');
         if (callBar) callBar.style.height = `${ml.call_pct || 0}%`;
@@ -1258,9 +1264,8 @@ function drawChartSignalOverlay(overlay, candles) {
     const isCall = overlay.is_call;
     const isPut = overlay.is_put;
 
-    if (!isCall && !isPut) {
-        // Remove old markers and lines if neutral
-        try { state.candleSeries.setMarkers([]); } catch(e) {}
+    // Helper function to safely remove price lines
+    const clearPriceLines = () => {
         if (state.tpLine) {
             try { state.candleSeries.removePriceLine(state.tpLine); } catch(e) {}
             state.tpLine = null;
@@ -1269,8 +1274,21 @@ function drawChartSignalOverlay(overlay, candles) {
             try { state.candleSeries.removePriceLine(state.slLine); } catch(e) {}
             state.slLine = null;
         }
+        if (state.entryMarker) {
+            try { state.candleSeries.removePriceLine(state.entryMarker); } catch(e) {}
+            state.entryMarker = null;
+        }
+    };
+
+    if (!isCall && !isPut) {
+        // Remove old markers and lines if neutral
+        try { state.candleSeries.setMarkers([]); } catch(e) {}
+        clearPriceLines();
         return;
     }
+
+    // Always clear old price lines before drawing new ones to prevent duplication
+    clearPriceLines();
 
     // === MARKER: Entry arrow on last candle ===
     const markerShape = isCall ? 'arrowUp' : 'arrowDown';
@@ -1297,16 +1315,6 @@ function drawChartSignalOverlay(overlay, candles) {
     const tf = state.selectedExpiry;
     const tfData = overlay.targets[String(tf)];
     if (!tfData) return;
-
-    // Remove old price lines
-    if (state.tpLine) {
-        try { state.candleSeries.removePriceLine(state.tpLine); } catch(e) {}
-        state.tpLine = null;
-    }
-    if (state.slLine) {
-        try { state.candleSeries.removePriceLine(state.slLine); } catch(e) {}
-        state.slLine = null;
-    }
 
     // TP line
     try {
@@ -1338,7 +1346,7 @@ function drawChartSignalOverlay(overlay, candles) {
 
     // Entry price line
     try {
-        const existingEntryLine = state.candleSeries.createPriceLine({
+        state.entryMarker = state.candleSeries.createPriceLine({
             price: entryPrice,
             color: '#00f3ff',
             lineWidth: 2,
@@ -1346,8 +1354,6 @@ function drawChartSignalOverlay(overlay, candles) {
             axisLabelVisible: true,
             title: `Entrada: ${entryPrice.toFixed(5)}`
         });
-        // Store so we can remove it later
-        if (!state.entryMarker) state.entryMarker = existingEntryLine;
     } catch(e) {
         console.warn('Entry price line error:', e);
     }

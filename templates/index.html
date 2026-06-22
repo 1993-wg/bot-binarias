@@ -397,7 +397,7 @@
 
                 <!-- PANEL ML — PREDICCIÓN DE MACHINE LEARNING -->
                 <div class="panel-card ml-panel">
-                    <h2 class="card-title"><i class="fa-solid fa-brain"></i> Predicción ML (Random Forest)</h2>
+                    <h2 class="card-title"><i class="fa-solid fa-brain"></i> Predicción ML (Voting Ensemble RF + MLP)</h2>
 
                     <!-- Barra de Aprendizaje -->
                     <div class="ml-learning-row">
@@ -430,6 +430,12 @@
                                 <div class="ml-pred-bar-fill put-fill" id="ml-put-bar" style="height:50%"></div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Precio Esperado Neural -->
+                    <div class="ml-neural-price-row" style="margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.05); text-align: center;">
+                        <span style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;"><i class="fa-solid fa-microchip"></i> Precio Esperado Neural (1m):</span>
+                        <div id="ml-neural-price" style="font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 700; color: var(--neon-cyan); margin-top: 3px;">—</div>
                     </div>
 
                     <div class="ml-hint" id="ml-hint">

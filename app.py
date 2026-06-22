@@ -30,23 +30,23 @@ INTERVALS = {
 # ML ENGINE — Per-symbol learning buffer + Random Forest
 # =====================================================================
 class MLEngine:
-    """Stores feature samples and trains a RandomForest predictor per symbol."""
+    """Stores feature samples and trains a Voting Classifier (Random Forest + MLP) and an MLP Regressor per symbol."""
 
     def __init__(self, min_samples=60, buffer_size=600):
-        self.buffers = {}          # symbol -> deque of (features, label)
-        self.models = {}           # symbol -> trained model
+        self.buffers = {}          # symbol -> deque of (features, label, next_close)
+        self.models = {}           # symbol -> trained models/scalers
         self.min_samples = min_samples
         self.buffer_size = buffer_size
 
     def _key(self, symbol, interval):
         return f"{symbol}_{interval}"
 
-    def push(self, symbol, interval, features, label):
-        """Add a labeled sample (features dict + whether next candle went up)."""
+    def push(self, symbol, interval, features, label, next_close):
+        """Add a labeled sample (features dict + whether next candle went up + next candle close)."""
         key = self._key(symbol, interval)
         if key not in self.buffers:
             self.buffers[key] = deque(maxlen=self.buffer_size)
-        self.buffers[key].append((features, label))
+        self.buffers[key].append((features, label, next_close))
 
         # Retrain whenever we have enough data
         buf = self.buffers[key]
@@ -55,39 +55,76 @@ class MLEngine:
 
     def _train(self, key, buf):
         try:
-            from sklearn.ensemble import RandomForestClassifier
+            from sklearn.ensemble import RandomForestClassifier, VotingClassifier
+            from sklearn.neural_network import MLPClassifier, MLPRegressor
+            from sklearn.preprocessing import StandardScaler
+            
             feature_names = list(buf[0][0].keys())
             X = []
-            y = []
-            for features, label in buf:
+            y_class = []
+            y_reg = []
+            for features, label, next_close in buf:
                 row = [features.get(f, 0) for f in feature_names]
                 X.append(row)
-                y.append(label)
+                y_class.append(label)
+                y_reg.append(next_close)
+                
             X = np.array(X, dtype=float)
-            y = np.array(y)
-            clf = RandomForestClassifier(n_estimators=100, random_state=42)
-            clf.fit(X, y)
-            self.models[key] = {"model": clf, "feature_names": feature_names}
+            y_class = np.array(y_class)
+            y_reg = np.array(y_reg)
+            
+            # Scale features
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(X)
+            
+            # Ensemble Classifier
+            rf = RandomForestClassifier(n_estimators=100, random_state=42)
+            mlp_clf = MLPClassifier(hidden_layer_sizes=(50, 25), max_iter=500, random_state=42)
+            
+            voting_clf = VotingClassifier(
+                estimators=[('rf', rf), ('mlp', mlp_clf)],
+                voting='soft'
+            )
+            voting_clf.fit(X_scaled, y_class)
+            
+            # Regressor for next_close prediction
+            mlp_reg = MLPRegressor(hidden_layer_sizes=(50, 25), max_iter=500, random_state=42)
+            mlp_reg.fit(X_scaled, y_reg)
+            
+            self.models[key] = {
+                "classifier": voting_clf,
+                "regressor": mlp_reg,
+                "scaler": scaler,
+                "feature_names": feature_names
+            }
+            print(f"[ML] Models trained successfully for {key}")
         except Exception as e:
-            print(f"[ML] Train error: {e}")
+            print(f"[ML] Train error for {key}: {e}")
 
     def predict(self, symbol, interval, features):
-        """Return (call_pct, put_pct, samples_collected, trained)."""
+        """Return (call_pct, put_pct, expected_price_neural, samples_collected, trained)."""
         key = self._key(symbol, interval)
         samples = len(self.buffers.get(key, []))
         if key not in self.models:
-            return 50.0, 50.0, samples, False
+            return 50.0, 50.0, 0.0, samples, False
         try:
             m = self.models[key]
-            row = [[features.get(f, 0) for f in m["feature_names"]]]
-            proba = m["model"].predict_proba(row)[0]
-            classes = list(m["model"].classes_)
+            row = np.array([[features.get(f, 0) for f in m["feature_names"]]], dtype=float)
+            row_scaled = m["scaler"].transform(row)
+            
+            # Predict probabilities
+            proba = m["classifier"].predict_proba(row_scaled)[0]
+            classes = list(m["classifier"].classes_)
             call_p = round(float(proba[classes.index(1)]) * 100, 1) if 1 in classes else 50.0
             put_p = round(float(proba[classes.index(0)]) * 100, 1) if 0 in classes else 50.0
-            return call_p, put_p, samples, True
+            
+            # Predict expected price
+            expected_price = float(m["regressor"].predict(row_scaled)[0])
+            
+            return call_p, put_p, round(expected_price, 5), samples, True
         except Exception as e:
-            print(f"[ML] Predict error: {e}")
-            return 50.0, 50.0, samples, False
+            print(f"[ML] Predict error for {key}: {e}")
+            return 50.0, 50.0, 0.0, samples, False
 
     def stats(self, symbol, interval):
         key = self._key(symbol, interval)
@@ -661,10 +698,25 @@ def get_signals():
 
             result = calculate_deriv_indicators(candles)
 
-            # Push labeled feature sample to ML engine
-            ml_engine.push(symbol, interval_str, result["features"], result["label"])
+            # Push labeled feature sample to ML engine using the last_close_cache logic
+            key = f"{symbol}_{interval_str}"
+            if key in last_close_cache:
+                prev_data = last_close_cache[key]
+                next_close = result["cur_close"]
+                label = 1 if next_close > prev_data["close"] else 0
+                ml_engine.push(symbol, interval_str, prev_data["features"], label, next_close)
+            
+            # Cache current features and close for next query
+            last_close_cache[key] = {
+                "features": result["features"],
+                "close": result["cur_close"]
+            }
+
             ml_stats = ml_engine.stats(symbol, interval_str)
-            call_p, put_p, samples, trained = ml_engine.predict(symbol, interval_str, result["features"])
+            call_p, put_p, expected_price_neural, samples, trained = ml_engine.predict(symbol, interval_str, result["features"])
+
+            # Expose in signal_overlay
+            result["signal_overlay"]["expected_price_neural"] = expected_price_neural
 
             return jsonify({
                 "status": "success",
@@ -696,6 +748,7 @@ def get_signals():
                 "ml": {
                     "call_pct": call_p,
                     "put_pct": put_p,
+                    "expected_price_neural": expected_price_neural if trained else None,
                     "samples": samples,
                     "trained": trained,
                     "min_samples": ml_stats["min_samples"],
